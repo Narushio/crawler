@@ -1,8 +1,9 @@
 module Crawler
   class Azurlane
-    def initialize
+    def initialize(update_image_storage_path: nil)
       @base_url = "https://azurlane.koumakan.jp"
-      @base_path = "resources/azurlane_update"
+      @base_path = "resources/azurlane"
+      @update_image_storage_path = update_image_storage_path
       @proxy = "http://127.0.0.1:7890"
       @next_gallery_url = nil
     end
@@ -56,6 +57,12 @@ module Crawler
           file_doc = Nokogiri::HTML(Down.open(URI.join(@base_url, href).to_s, proxy: @proxy))
           file_url = file_doc.css("a.internal").attr("href")
           Down.download(file_url, destination: destination, proxy: @proxy)
+          if @update_image_storage_path
+            filepath = destination.sub(@base_path, @update_image_storage_path)
+            target_path = filepath.split("/")[..-2].join("/")
+            FileUtils.mkdir_p(target_path) unless Dir.exist?(target_path)
+            FileUtils.cp(destination, target_path)
+          end
           puts "[INFO]#{filename} downloaded successfully at #{Time.now}"
         rescue => e
           puts "[ERROR]#{e.inspect}"
